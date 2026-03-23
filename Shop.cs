@@ -59,18 +59,20 @@ public static class Shop
         {
             DisplayShopItems();
             Console.WriteLine("Enter the number of the item you want to buy, or 0 to exit:");
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice == 0)
+
+            string input = Console.ReadLine() ?? string.Empty;
+            if (!int.TryParse(input, out int choice))
+            {
+                Console.WriteLine("Invalid input. Please enter a valid number.");
+                continue;
+            }
+
+            if (choice == 0)
             {
                 break;
             }
-            else if (int.TryParse(Console.ReadLine(), out choice))
-            {
-                BuyItem(player, choice);
-            }
-            else
-            {
-                Console.WriteLine("Invalid input. Please enter a valid number.");
-            }
+
+            BuyItem(player, choice);
         }
     }
 }
