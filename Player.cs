@@ -1,8 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;    
-
 public class Player : Character
 {
+    public Item? EquippedWeapon { get; set; }
+    public Item? EquippedArmor { get; set; }
+    public Item? EquippedAccessory { get; set; }
     public int Experience { get; set; } = 0;
     public int Gold { get; set; } = 0;
 
@@ -20,7 +20,7 @@ public class Player : Character
     public void AddItemToInventory(Item item)
     {
         Inventory.Add(item);
-        Console.WriteLine($"You have obtained: {item.Name} (Type: {item.Type}, Value: {item.Value}, Price: {item.Price} gold)");
+        Console.WriteLine($"You have obtained: {item.Name ?? "Unknown"} (Type: {item.Type}, Value: {item.Value}, Price: {item.Price} gold)");
     }
 
     // Vypise obsah inventara hraca. Dokoncene.
@@ -51,7 +51,6 @@ public class PlayerLevelUp
         {
             return false;
         }
-
         player.Experience -= requiredExperience;
         player.Level++;
         player.AttackPower += 5;
@@ -62,3 +61,83 @@ public class PlayerLevelUp
         return true;
     }
 }
+
+public class EquipmentManager
+{
+    // Vybavi hraca zbranou, brnenim alebo doplnkom. Dokoncene.
+    public void EquipItem(Player player, Item item)
+    {
+        if (!player.Inventory.Contains(item))
+        {
+            Console.WriteLine("You don't have that item in your inventory.");
+            return;
+        }
+
+        switch (item.Type)
+        {
+            case ItemType.Weapon:
+                if (player.EquippedWeapon != null)
+                {
+                    player.AttackPower -= player.EquippedWeapon.Value;
+                    player.Inventory.Add(player.EquippedWeapon);
+                }
+                player.Inventory.Remove(item);
+                player.EquippedWeapon = item;
+                player.AttackPower += item.Value;
+                Console.WriteLine($"You have equipped: {item.Name} (Attack Power: +{item.Value})");
+                break;
+            case ItemType.Armor:
+                if (player.EquippedArmor != null)
+                {
+                    player.Defense -= player.EquippedArmor.Value;
+                    player.Inventory.Add(player.EquippedArmor);
+                }
+                player.Inventory.Remove(item);
+                player.EquippedArmor = item;
+                player.Defense += item.Value;
+                Console.WriteLine($"You have equipped: {item.Name} (Defense: +{item.Value})");
+                break;
+            case ItemType.Accessory:
+                if (player.EquippedAccessory != null)
+                {
+                    player.CriticalChance -= player.EquippedAccessory.Value;
+                    player.Inventory.Add(player.EquippedAccessory);
+                }
+                player.Inventory.Remove(item);
+                player.EquippedAccessory = item;
+                player.CriticalChance += item.Value;
+                Console.WriteLine($"You have equipped: {item.Name} (Critical Chance: +{item.Value}%)");
+                break;
+            default:
+                Console.WriteLine("This item cannot be equipped.");
+                break;
+        }
+    }
+}
+
+public class UseItemManager
+{
+    // Pouzije konzumovatelny item z inventara hraca. Dokoncene.
+    public void UseConsumableItem(Player player, Item item)
+    {
+        if (!player.Inventory.Contains(item))
+        {
+            Console.WriteLine("You don't have that item in your inventory.");
+            return;
+        }
+
+        if (item.Type != ItemType.Consumable)
+        {
+            Console.WriteLine("This item cannot be used.");
+            return;
+        }
+
+        player.Inventory.Remove(item);
+        player.Health = Math.Min(player.Health + item.Value, 100 + (player.Level - 1) * 20);
+        Console.WriteLine($"You used: {item.Name} and restored {item.Value} health!");
+    }
+}
+
+
+
+
