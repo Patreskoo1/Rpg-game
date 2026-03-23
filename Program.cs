@@ -1,6 +1,3 @@
-const int HealthPotionCost = 20;
-const int HealthPotionHealAmount = 100;
-const int MaxHealth = 100;
 
 Console.WriteLine("Hello, dear traveler!");
 Console.WriteLine("What is your name?");
@@ -38,6 +35,18 @@ Enemy CreateRandomEnemy(Random rng)
         1 => new Skeleton(),
         2 => new Zombie(),
         _ => new HumanBandit(),
+    };
+}
+
+// Nahodne vygeneruje predmet (loot), ktory moze padnut po boji. Dokoncene.
+Item GenerateRandomItem(Random rng)
+{
+    return rng.Next(0, 4) switch
+    {
+        0 => new Item { Name = "Small Health Potion", Type = ItemType.Consumable, Value = 30, Price = 15 },
+        1 => new Item { Name = "Iron Sword", Type = ItemType.Weapon, Value = 8, Price = 45 },
+        2 => new Item { Name = "Leather Armor", Type = ItemType.Armor, Value = 6, Price = 40 },
+        _ => new Item { Name = "Lucky Ring", Type = ItemType.Accessory, Value = 4, Price = 60 },
     };
 }
 
@@ -97,7 +106,7 @@ BattleResult RunBattle(Player currentPlayer, Enemy currentEnemy, Random rng)
 
         if (currentEnemy.Health <= 0)
         {
-            HandleEnemyDefeat(currentPlayer, currentEnemy);
+            HandleEnemyDefeat(currentPlayer, currentEnemy, rng);
             return BattleResult.EnemyDefeated;
         }
 
@@ -154,12 +163,17 @@ bool ResolveEnemyAttack(Player currentPlayer, Enemy currentEnemy, Random rng)
 }
 
 // Prideli odmeny za porazenie nepriatela (XP + zlato). Dokoncene.
-void HandleEnemyDefeat(Player currentPlayer, Enemy currentEnemy)
+void HandleEnemyDefeat(Player currentPlayer, Enemy currentEnemy, Random rng)
 {
     currentEnemy.Health = 0;
     Console.WriteLine($"You have defeated the {currentEnemy.Name}!");
     currentPlayer.Experience += currentEnemy.XpReward;
     currentPlayer.Gold += currentEnemy.GoldReward;
+    if (currentEnemy.GenerateRandomItemDrop(rng))
+    {
+        Item droppedItem = GenerateRandomItem(rng);
+        currentPlayer.AddItemToInventory(droppedItem);
+    }
     Console.WriteLine($"You gain {currentEnemy.XpReward} XP and {currentEnemy.GoldReward} gold.");
     Console.WriteLine($"Your current XP: {currentPlayer.Experience}, Gold: {currentPlayer.Gold}");
     if (currentPlayer.Experience >= currentPlayer.Level * 50)
@@ -179,15 +193,17 @@ bool HandleAdventureChoice(Player currentPlayer)
     }
 
     Console.WriteLine("You chose to continue your adventure! Nice choice, traveler! You can choose from this options :");
-    Console.WriteLine($"1. Health Potion for {HealthPotionCost} gold (restores {HealthPotionHealAmount} health)");
+    Console.WriteLine("1. Visit the shop.");
     Console.WriteLine("2. View your stats");
     Console.WriteLine("3. Check your inventory");
-    Console.WriteLine("4. Quit the adventure");
+    Console.WriteLine("4. Equip an item");
+    Console.WriteLine("5. Use a health potion");
+    Console.WriteLine("6. Quit the adventure");
 
     string response = (Console.ReadLine() ?? "3").Trim();
     if (response == "1")
     {
-        BuyHealthPotion(currentPlayer);
+        Shop.OpenShop(currentPlayer);
         return true;
     }
 
@@ -200,12 +216,28 @@ bool HandleAdventureChoice(Player currentPlayer)
     if (response == "3")
     {
         currentPlayer.PrintInventory();
+        Console.WriteLine("Do you wish to go back to options menu? (yes/no)");
+        if (IsYes(Console.ReadLine()))
+        {
+            return HandleAdventureChoice(currentPlayer);
+        }
         return true;
     }
 
     if (response == "4")
     {
-        Console.WriteLine("You chose to end your adventure. Farewell, traveler!");
+        TryEquipItemFromInventory(currentPlayer);
+        return true;
+    }
+    
+    if (response == "5")
+    {
+        TryUseConsumableItem(currentPlayer);
+        return true;
+    }
+    
+    if (response == "6")
+    {
         return false;
     }
 
@@ -213,21 +245,70 @@ bool HandleAdventureChoice(Player currentPlayer)
     return true;
 }
 
-// Pokusi sa kupit lektvar zdravia a obnovi HP do maxima. Dokoncene.
-void BuyHealthPotion(Player currentPlayer)
+// Zobrazi inventar a necha hraca vybrat item na equipnutie.
+void TryEquipItemFromInventory(Player currentPlayer)
 {
-    if (currentPlayer.Gold < HealthPotionCost)
+    if (currentPlayer.Inventory.Count == 0)
     {
-        Console.WriteLine("You don't have enough gold to buy a Health Potion.");
+        Console.WriteLine("Your inventory is empty.");
         return;
     }
 
-    currentPlayer.Gold -= HealthPotionCost;
-    currentPlayer.Health = Math.Min(currentPlayer.Health + HealthPotionHealAmount, MaxHealth);
-    Console.WriteLine("You bought a Health Potion and restored 100 health!");
-    Console.WriteLine($"Your current health: {currentPlayer.Health}, Gold: {currentPlayer.Gold}");
+    Console.WriteLine("Your Inventory:");
+    for (int i = 0; i < currentPlayer.Inventory.Count; i++)
+    {
+        var it = currentPlayer.Inventory[i];
+        Console.WriteLine($"{i + 1}. {it.Name} (Type: {it.Type}, Value: {it.Value})");
+    }
+
+    Console.WriteLine("Enter the number of the item to equip (or 0 to cancel):");
+    if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= currentPlayer.Inventory.Count)
+    {
+        EquipmentManager equipManager = new EquipmentManager();
+        equipManager.EquipItem(currentPlayer, currentPlayer.Inventory[choice - 1]);
+    }
+    else
+    {
+        Console.WriteLine("Cancelled.");
+    }
 }
 
+void TryUseConsumableItem(Player currentPlayer)
+{
+    var consumables = currentPlayer.Inventory.Where(i => i.Type == ItemType.Consumable).ToList();
+    if (consumables.Count == 0)
+    {
+        Console.WriteLine("You have no consumable items in your inventory.");
+        return;
+    }
+
+    Console.WriteLine("Your Consumable Items:");
+    for (int i = 0; i < consumables.Count; i++)
+    {
+        var it = consumables[i];
+        Console.WriteLine($"{i + 1}. {it.Name} (Value: {it.Value})");
+    }
+
+    Console.WriteLine("Enter the number of the item to use (or 0 to cancel):");
+    if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= consumables.Count)
+    {
+        Item selectedItem = consumables[choice - 1];
+        if (selectedItem.Name?.Contains("Health Potion") == true)
+        {
+            currentPlayer.Health = Math.Min(currentPlayer.Health + selectedItem.Value, 100 + (currentPlayer.Level - 1) * 20);
+            currentPlayer.Inventory.Remove(selectedItem);
+            Console.WriteLine($"You used {selectedItem.Name} and restored {selectedItem.Value} health. Current health: {currentPlayer.Health}");
+        }
+        else
+        {
+            Console.WriteLine("This item cannot be used right now.");
+        }
+    }
+    else
+    {
+        Console.WriteLine("Cancelled.");
+    }
+}
 enum BattleResult
 {
     EnemyDefeated,
