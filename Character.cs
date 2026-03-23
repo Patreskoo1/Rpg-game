@@ -8,7 +8,7 @@ public class Character
     public int CriticalChance { get; set; } = 5;
     public double CriticalMultiplier { get; set; } = 1.5;
     public int ItemDropChance { get; set; } = 30; 
-    
+
     // Vypocita zakladne poskodenie utoku v rozumnom rozmedzi. Dokoncene.
     public int GetAttackDamage(Random random)
     {
@@ -36,7 +36,7 @@ public class Character
         return Math.Max(0, damage);
     }
 
-    public bool CalculateItemDrop(Random random)
+    public bool GenerateRandomItemDrop(Random random)
     {
         return random.Next(0, 100) < ItemDropChance;
     }
