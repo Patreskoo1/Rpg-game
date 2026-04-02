@@ -1,4 +1,5 @@
 
+// Hlavný program, ktorý spúšťa textovú RPG hru. Dokoncene.
 Console.WriteLine("Hello, dear traveler!");
 Console.WriteLine("What is your name?");
 string name = Console.ReadLine() ?? "Traveler";
@@ -199,6 +200,7 @@ bool HandleAdventureChoice(Player currentPlayer)
     Console.WriteLine("4. Equip an item");
     Console.WriteLine("5. Use a health potion");
     Console.WriteLine("6. Quit the adventure");
+    Console.WriteLine("7. DEBUG: Give gold, potion, weapon");
 
     string response = (Console.ReadLine() ?? "3").Trim();
     if (response == "1")
@@ -239,6 +241,15 @@ bool HandleAdventureChoice(Player currentPlayer)
     if (response == "6")
     {
         return false;
+    }
+
+    if (response == "7")
+    {
+        currentPlayer.Gold += 500;
+        currentPlayer.Inventory.Add(new Item { Name = "Debug Sword", Type = ItemType.Weapon, Value = 99, Price = 1 });
+        currentPlayer.Inventory.Add(new Item { Name = "Debug Potion", Type = ItemType.Consumable, Value = 100, Price = 1 });
+        Console.WriteLine("DEBUG: Added 500 gold, Debug Sword, Debug Potion.");
+        return true;
     }
 
     Console.WriteLine("Invalid choice. Please try again.");
