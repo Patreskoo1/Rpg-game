@@ -58,7 +58,7 @@ public static class Shop
         while (true)
         {
             DisplayShopItems();
-            Console.WriteLine("Enter the number of the item you want to buy, or 0 to exit:");
+            Console.WriteLine("Press 1 to buy an item, 2 to sell an item, or 0 to exit the shop.");
 
             string input = Console.ReadLine() ?? string.Empty;
             if (!int.TryParse(input, out int choice))
@@ -72,7 +72,46 @@ public static class Shop
                 break;
             }
 
-            BuyItem(player, choice);
+            if (choice == 1)
+            {
+                Console.WriteLine("Enter the number of the item you want to buy:");
+                Console.WriteLine($"Your Gold: {player.Gold}");
+                string buyInput = Console.ReadLine() ?? string.Empty;
+                if (int.TryParse(buyInput, out int buyChoice))
+                {
+                    BuyItem(player, buyChoice);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please enter a valid number.");
+                }
+            }
+            else if (choice == 2)
+            {
+                if (player.Inventory.Count == 0)
+                {
+                    Console.WriteLine("You have no items to sell.");
+                    continue;
+                }
+
+                Console.WriteLine("Your Inventory:");
+                for (int i = 0; i < player.Inventory.Count; i++)
+                {
+                    var item = player.Inventory[i];
+                    Console.WriteLine($"{i + 1}. {item.Name} - Type: {item.Type}, Sell Price: {item.Price / 2} gold");
+                }
+
+                Console.WriteLine("Enter the number of the item you want to sell:");
+                string sellInput = Console.ReadLine() ?? string.Empty;
+                if (int.TryParse(sellInput, out int sellChoice))
+                {
+                    SellItem(player, sellChoice);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please enter a valid number.");
+                }
+            }
         }
     }
 }
