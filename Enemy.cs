@@ -11,6 +11,15 @@ public class Enemy : Character
         Defense = 5;
         CriticalChance = 5;
     }
+
+    public Enemy(string name, int health, int attackPower, int defense)
+    {
+        Name = name;
+        Health = health;
+        AttackPower = attackPower;
+        Defense = defense;
+        CriticalChance = 5;
+    }
 }
 
 public class Goblin : Enemy
@@ -63,3 +72,4 @@ public class HumanBandit : Enemy
         GoldReward = 20;
     }
 }
+
